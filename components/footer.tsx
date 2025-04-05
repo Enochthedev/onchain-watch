@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { MessageSquare, Send} from "lucide-react"
-import { useScrollAnimation } from "@/hooks/use-scroll-animation"
+import { MessageSquare, Send } from "lucide-react"
 import { FaDiscord } from "react-icons/fa"
+import { useScrollAnimation } from "@/hooks/use-scroll-animation"
 
 export default function Footer() {
   const { ref: footerRef, isVisible: footerVisible } = useScrollAnimation<HTMLElement>()
@@ -49,7 +49,7 @@ export default function Footer() {
                 rel="noopener noreferrer"
                 className="footer-link bg-black/50 hover:bg-[#00FFC8]/10 p-3 rounded-full border border-[#00FFC8]/20 transition-all"
               >
-               <FaDiscord className="h-6 w-6 text-[#00FFC8]" />
+                <FaDiscord className="h-6 w-6 text-[#00FFC8]" />
                 <span className="sr-only">Discord</span>
               </Link>
               <Link
@@ -58,8 +58,8 @@ export default function Footer() {
                 rel="noopener noreferrer"
                 className="footer-link bg-black/50 hover:bg-[#00FFC8]/10 p-3 rounded-full border border-[#00FFC8]/20 transition-all"
               >
-               <Send className="h-6 w-6 text-[#00FFC8]" />
-                <span className="sr-only">Discord</span>
+                <Send className="h-6 w-6 text-[#00FFC8]" />
+                <span className="sr-only">Telegram</span>
               </Link>
             </div>
           </div>

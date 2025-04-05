@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.svg",
   },
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -29,6 +28,3 @@ export default function RootLayout({
   )
 }
 
-
-
-import './globals.css'
