@@ -2,12 +2,13 @@
 
 import type React from "react"
 
-import { useState, useTransition } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, CheckCircle, Mail, AlertCircle } from "lucide-react"
 import { useScrollAnimation } from "@/hooks/use-scroll-animation"
 import { registerForWaitlist } from "@/app/actions/waitlist"
+import { toast } from "sonner"
 
 export default function WaitlistForm() {
   const [email, setEmail] = useState("")
@@ -15,11 +16,24 @@ export default function WaitlistForm() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [emailDetails, setEmailDetails] = useState<any>(null)
   const [emailSent, setEmailSent] = useState(false)
+  const [userEmail, setUserEmail] = useState("")
   const [isPending, startTransition] = useTransition()
 
   const { ref: formRef, isVisible: formVisible } = useScrollAnimation<HTMLDivElement>({
     threshold: 0.2,
   })
+
+  useEffect(() => {
+    if (isSuccess && message) {
+      toast.success(message, {
+        duration: 5000,
+      })
+    } else if (!isSuccess && message) {
+      toast.error(message, {
+        duration: 5000,
+      })
+    }
+  }, [isSuccess, message])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -34,6 +48,10 @@ export default function WaitlistForm() {
       setIsSuccess(false)
       return
     }
+
+    // Store the email for display purposes
+    const submittedEmail = email
+    setUserEmail(submittedEmail)
 
     const formData = new FormData()
     formData.append("email", email)
@@ -81,7 +99,7 @@ export default function WaitlistForm() {
               <h3 className="text-xl font-medium text-white mb-2">Thank You!</h3>
               <p className="text-white/70 mb-4">{message}</p>
 
-              {emailSent && emailDetails && (
+              {emailSent && (
                 <div className="mt-6 bg-black/30 p-4 rounded-lg border border-[#00FFC8]/10 text-left">
                   <div className="flex items-center mb-3">
                     <Mail className="h-5 w-5 text-[#00FFC8] mr-2" />
@@ -89,10 +107,10 @@ export default function WaitlistForm() {
                   </div>
                   <div className="text-sm text-white/70 space-y-2">
                     <p>
-                      <span className="text-white/50">ID:</span> {emailDetails.id}
+                      <span className="text-white/50">ID:</span> {emailDetails?.id || "Confirmation sent"}
                     </p>
                     <p>
-                      <span className="text-white/50">To:</span> {emailDetails.to}
+                      <span className="text-white/50">To:</span> {userEmail || "your email"}
                     </p>
                     <p>
                       <span className="text-white/50">Status:</span> <span className="text-green-400">Delivered</span>
@@ -116,37 +134,27 @@ export default function WaitlistForm() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-white/70 mb-1">
-                  Email Address
-                </label>
+              <div className="flex overflow-hidden rounded-xl bg-white/5 p-1 ring-1 ring-[#00FFC8]/20 focus-within:ring-2 focus-within:ring-[#00FFC8]">
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="bg-black/50 border-[#00FFC8]/20 focus:border-[#00FFC8] text-white"
+                  className="w-full border-0 bg-transparent text-white placeholder:text-gray-400 focus:ring-0 focus:border-transparent focus-visible:border-transparent focus:outline-none active:ring-0 active:outline-none focus-visible:ring-0 focus-visible:outline-none active:border-transparent focus-visible:ring-offset-0"
                   required
                   disabled={isPending}
                 />
-                {!isSuccess && message && <p className="mt-1 text-sm text-red-400">{message}</p>}
+                <Button
+                  type="submit"
+                  className="bg-[#00FFC8] hover:bg-[#00FFC8]/90 text-black font-medium rounded-lg w-[120px]"
+                  disabled={isPending}
+                >
+                  {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Join Now"}
+                </Button>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-[#00FFC8] hover:bg-[#00FFC8]/90 text-black font-medium py-3 rounded-full"
-                disabled={isPending}
-              >
-                {isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  "Join Waitlist"
-                )}
-              </Button>
+              {!isSuccess && message && <p className="mt-1 text-sm text-red-400">{message}</p>}
 
               <p className="text-xs text-center text-white/50 mt-4">
                 We respect your privacy and will never share your information.
@@ -158,4 +166,3 @@ export default function WaitlistForm() {
     </section>
   )
 }
-

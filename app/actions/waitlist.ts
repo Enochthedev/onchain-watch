@@ -3,6 +3,8 @@
 import { Resend } from "resend"
 import { Redis } from "@upstash/redis"
 import { z } from "zod"
+import { EmailTemplate } from "../email-template"
+import { getWaitlistCount } from "@/components/waitlist-stats"
 
 // Get API key from environment variable
 const resendApiKey = process.env.RESEND_API_KEY
@@ -38,6 +40,8 @@ export async function registerForWaitlist(formData: FormData) {
         success: true,
         message: "You are already on our waitlist. We'll notify you when we launch!",
         alreadyRegistered: true,
+        count: await getWaitlistCount(),
+        emailSent: false,
       }
     }
 
@@ -47,6 +51,9 @@ export async function registerForWaitlist(formData: FormData) {
     // Increment waitlist count
     await redis.incr("waitlist:count")
 
+    // Get updated count
+    const count = await getWaitlistCount()
+
     // Check if Resend API key is available before sending email
     if (!resendApiKey) {
       console.warn("Email not sent: RESEND_API_KEY is missing")
@@ -55,32 +62,44 @@ export async function registerForWaitlist(formData: FormData) {
         message: "Thank you for joining our waitlist! We'll notify you when we launch.",
         emailSent: false,
         emailDetails: null,
+        count,
       }
     }
 
     // Send confirmation email
-    const emailResponse = await resend.emails.send({
-      from: "Onchain Watch <noreply@onchainwatch.com>",
-      to: email,
-      subject: "Welcome to the Onchain Watch Waitlist!",
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #1A2E40; margin-top: 40px;">Welcome to Onchain Watch!</h1>
-          <p>Thank you for joining our waitlist. We're building the most comprehensive blockchain monitoring tool to help you navigate the crypto space safely.</p>
-          <p>We'll notify you as soon as we launch.</p>
-          <div style="margin: 40px 0; padding: 20px; background-color: #f8f9fa; border-radius: 5px;">
-            <p style="margin: 0; color: #6c757d;">Stay safe in the blockchain ecosystem with real-time monitoring and alerts.</p>
-          </div>
-          <p>The Onchain Watch Team</p>
-        </div>
-      `,
-    })
+    try {
+      const emailResponse = await resend.emails.send({
+        from: "Onchain Watch <onboarding@resend.dev",
+        to: email,
+        subject: "Welcome to the Onchain Watch Waitlist!",
+        html: EmailTemplate({ email }),
+      })
 
-    return {
-      success: true,
-      message: "Thank you for joining our waitlist! We'll notify you when we launch.",
-      emailSent: true,
-      emailDetails: emailResponse,
+      console.log("Email sent successfully:", emailResponse)
+
+      return {
+        success: true,
+        message: "Thank you for joining our waitlist! We'll notify you when we launch.",
+        emailSent: true,
+        emailDetails: {
+          // The Resend API returns a data object with an id
+          id: emailResponse.data?.id || "Confirmation sent",
+          to: email,
+          status: "Delivered",
+        },
+        count,
+      }
+    } catch (emailError) {
+      console.error("Error sending email:", emailError)
+
+      // Still return success for the waitlist registration
+      return {
+        success: true,
+        message: "Thank you for joining our waitlist! We'll notify you when we launch.",
+        emailSent: false,
+        emailDetails: null,
+        count,
+      }
     }
   } catch (error) {
     console.error("Waitlist registration error:", error)
@@ -91,6 +110,7 @@ export async function registerForWaitlist(formData: FormData) {
         message: error.errors[0].message,
         emailSent: false,
         emailDetails: null,
+        count: await getWaitlistCount(),
       }
     }
 
@@ -99,6 +119,7 @@ export async function registerForWaitlist(formData: FormData) {
       message: "Something went wrong. Please try again later.",
       emailSent: false,
       emailDetails: null,
+      count: await getWaitlistCount(),
     }
   }
 }

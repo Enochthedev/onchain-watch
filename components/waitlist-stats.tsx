@@ -6,24 +6,25 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
 })
 
-// Initial count to show for social proof
-const INITIAL_COUNT = 100
+// Minimum count to show for social proof
+const MIN_DISPLAY_COUNT = 100
+
+// Function to get the waitlist count
+export async function getWaitlistCount() {
+  try {
+    const count = await redis.scard("waitlist:emails")
+    return Number(count) || 0
+  } catch {
+    return 0
+  }
+}
 
 export default async function WaitlistStats() {
-  // Get waitlist count with fallback to 0
-  let actualCount = 0
+  // Get actual count
+  const actualCount = await getWaitlistCount()
 
-  try {
-    // Try to get the count from Redis
-    const redisCount = await redis.get("waitlist:count")
-    actualCount = typeof redisCount === "number" ? redisCount : 0
-  } catch (error) {
-    console.error("Error fetching waitlist count:", error)
-    // If there's an error, we'll use the default of 0
-  }
-
-  // Add the initial count to the actual count
-  const displayCount = INITIAL_COUNT + actualCount
+  // Use the actual count or the minimum, whichever is higher
+  const displayCount = Math.max(actualCount, MIN_DISPLAY_COUNT)
 
   // Format the count with commas
   const formattedCount = new Intl.NumberFormat().format(displayCount)
