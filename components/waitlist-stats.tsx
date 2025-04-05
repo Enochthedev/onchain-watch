@@ -1,36 +1,11 @@
-import { Redis } from "@upstash/redis"
+import { getStaticWaitlistCount } from "@/lib/redis"
 
-// Initialize Upstash Redis
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || "",
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
-})
-
-// Minimum count to show for social proof
-const MIN_DISPLAY_COUNT = 100
-
-// Function to get the waitlist count
-export async function getWaitlistCount() {
-  try {
-    // Add cache-busting by using a timestamp in the key
-    const count = await redis.scard("waitlist:emails")
-    return Number(count) || 0
-  } catch (error) {
-    console.error("Error getting waitlist count:", error)
-    return 0
-  }
-}
-
-// Update the component to use cache: 'no-store' to prevent caching
-export default async function WaitlistStats() {
-  // Add cache: 'no-store' to ensure fresh data on each request
-  const actualCount = await getWaitlistCount()
-
-  // Use the actual count or the minimum, whichever is higher
-  const displayCount = Math.max(actualCount, MIN_DISPLAY_COUNT)
+export default function WaitlistStats() {
+  // Use the static count that doesn't require a Redis call
+  const count = getStaticWaitlistCount()
 
   // Format the count with commas
-  const formattedCount = new Intl.NumberFormat().format(displayCount)
+  const formattedCount = new Intl.NumberFormat().format(count)
 
   return (
     <div className="text-center mt-2 mb-6">

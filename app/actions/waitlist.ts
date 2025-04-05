@@ -1,10 +1,9 @@
 "use server"
 
 import { Resend } from "resend"
-import { Redis } from "@upstash/redis"
 import { z } from "zod"
 import { EmailTemplate } from "../email-template"
-import { getWaitlistCount } from "@/components/waitlist-stats"
+import { addEmailToWaitlist, getStaticWaitlistCount } from "@/lib/redis"
 
 // Get API key from environment variable
 const resendApiKey = process.env.RESEND_API_KEY
@@ -17,16 +16,9 @@ if (!resendApiKey) {
 // Initialize Resend with explicit API key
 const resend = new Resend(resendApiKey || "")
 
-// Initialize Upstash Redis
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || "",
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
-})
-
 // Email validation schema
 const emailSchema = z.string().email("Please enter a valid email address")
 
-// Update the registerForWaitlist function to properly handle the count
 export async function registerForWaitlist(formData: FormData) {
   const email = formData.get("email") as string
 
@@ -34,23 +26,25 @@ export async function registerForWaitlist(formData: FormData) {
     // Validate email
     emailSchema.parse(email)
 
-    // Check if email already exists in waitlist
-    const exists = await redis.sismember("waitlist:emails", email)
-    if (exists) {
+    // Add email to waitlist using the centralized function
+    const result = await addEmailToWaitlist(email)
+
+    if (result.alreadyExists) {
       return {
         success: true,
         message: "You are already on our waitlist. We'll notify you when we launch!",
         alreadyRegistered: true,
-        count: await getWaitlistCount(),
+        count: getStaticWaitlistCount(), // Use static count
         emailSent: false,
       }
     }
 
-    // Add email to Redis set
-    await redis.sadd("waitlist:emails", email)
+    if (!result.success) {
+      throw new Error("Failed to add email to waitlist")
+    }
 
-    // Get updated count after adding the email
-    const count = await getWaitlistCount()
+    // Get the static count
+    const count = getStaticWaitlistCount()
 
     // Check if Resend API key is available before sending email
     if (!resendApiKey) {
@@ -67,7 +61,7 @@ export async function registerForWaitlist(formData: FormData) {
     // Send confirmation email
     try {
       const emailResponse = await resend.emails.send({
-        from: "Onchain Watch <noreply@onchainwatch.com>",
+        from: "Onchain Watch <onboarding@resend.dev>",
         to: email,
         subject: "Welcome to the Onchain Watch Waitlist!",
         html: EmailTemplate({ email }),
@@ -107,7 +101,7 @@ export async function registerForWaitlist(formData: FormData) {
         message: error.errors[0].message,
         emailSent: false,
         emailDetails: null,
-        count: await getWaitlistCount(),
+        count: getStaticWaitlistCount(), // Use static count
       }
     }
 
@@ -116,7 +110,7 @@ export async function registerForWaitlist(formData: FormData) {
       message: "Something went wrong. Please try again later.",
       emailSent: false,
       emailDetails: null,
-      count: await getWaitlistCount(),
+      count: getStaticWaitlistCount(), // Use static count
     }
   }
 }

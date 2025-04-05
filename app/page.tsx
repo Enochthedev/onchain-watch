@@ -4,13 +4,10 @@ import About from "@/components/about"
 import WaitlistForm from "@/components/waitlist-form"
 import Stats from "@/components/stats"
 import Footer from "@/components/footer"
-import WaitlistStats from "@/components/waitlist-stats"
-import WaitlistStatsClient from "@/components/waitlist-stats-client"
-import { Suspense } from "react"
 
-// Add cache control to prevent caching
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+// Use static rendering to eliminate unnecessary Redis calls
+export const dynamic = "force-static"
+export const revalidate = 3600 // Revalidate at most once per hour
 
 export default function Home() {
   return (
@@ -19,24 +16,6 @@ export default function Home() {
         <Header />
         <main>
           <Hero />
-          {/* Keep this instance for the main waitlist stats display */}
-          <Suspense
-            fallback={
-              <WaitlistStatsClient>
-                <div className="text-center mt-2 mb-6">
-                  <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-[#00FFC8]/10 inline-flex items-center">
-                    <div className="text-white/80 text-sm">
-                      <span className="text-[#00FFC8] font-bold">100+</span> people on the waitlist
-                    </div>
-                  </div>
-                </div>
-              </WaitlistStatsClient>
-            }
-          >
-            <WaitlistStatsClient>
-              <WaitlistStats />
-            </WaitlistStatsClient>
-          </Suspense>
           <Stats />
           <About />
           <WaitlistForm />

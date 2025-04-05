@@ -4,19 +4,8 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight, Send } from "lucide-react"
 import { useScrollAnimation } from "@/hooks/use-scroll-animation"
 import { FaDiscord } from "react-icons/fa"
-import dynamic from "next/dynamic"
-
-// Dynamically import the WaitlistStats component with no SSR to avoid hydration issues
-const DynamicWaitlistStats = dynamic(
-  () =>
-    import("./waitlist-stats-client").then((mod) => {
-      // We're importing the client wrapper that will handle the animation
-      const ClientWrapper = mod.default
-      // We'll pass the server component as children later
-      return ClientWrapper
-    }),
-  { ssr: false },
-)
+import WaitlistStatsClient from "./waitlist-stats-client"
+import WaitlistStats from "./waitlist-stats"
 
 export default function Hero() {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLHeadingElement>()
@@ -24,6 +13,7 @@ export default function Hero() {
   const { ref: descRef, isVisible: descVisible } = useScrollAnimation<HTMLParagraphElement>()
   const { ref: buttonsRef, isVisible: buttonsVisible } = useScrollAnimation<HTMLDivElement>()
   const { ref: socialRef, isVisible: socialVisible } = useScrollAnimation<HTMLDivElement>()
+  const { ref: statsRef, isVisible: statsVisible } = useScrollAnimation<HTMLDivElement>()
 
   return (
     <section className="py-24 md:py-32 lg:py-40 relative">
@@ -79,17 +69,15 @@ export default function Hero() {
             </Button>
           </div>
 
-          {/* Use the dynamic import of WaitlistStats with Suspense boundary */}
-          <DynamicWaitlistStats>
-            {/* This will be rendered by the server and passed to the client wrapper */}
-            <div className="text-center mt-2 mb-6">
-              <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-[#00FFC8]/10 inline-flex items-center">
-                <div className="text-white/80 text-sm">
-                  <span className="text-[#00FFC8] font-bold">100+</span> people on the waitlist
-                </div>
-              </div>
-            </div>
-          </DynamicWaitlistStats>
+          <div
+            ref={statsRef}
+            className={`mb-10 ${statsVisible ? "fade-up visible" : "fade-up"}`}
+            style={{ transitionDelay: "0.7s" }}
+          >
+            <WaitlistStatsClient>
+              <WaitlistStats />
+            </WaitlistStatsClient>
+          </div>
 
           <div
             ref={socialRef}
