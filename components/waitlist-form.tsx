@@ -67,6 +67,12 @@ export default function WaitlistForm() {
 
         if (result.success) {
           setEmail("")
+
+          // Add a slight delay before refreshing to allow the user to see the success message
+          setTimeout(() => {
+            // Use window.location.reload() to refresh the page and update the count
+            window.location.reload()
+          }, 3000)
         }
       } catch (error) {
         console.error("Error submitting form:", error)
@@ -166,3 +172,4 @@ export default function WaitlistForm() {
     </section>
   )
 }
+

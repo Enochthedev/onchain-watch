@@ -26,6 +26,7 @@ const redis = new Redis({
 // Email validation schema
 const emailSchema = z.string().email("Please enter a valid email address")
 
+// Update the registerForWaitlist function to properly handle the count
 export async function registerForWaitlist(formData: FormData) {
   const email = formData.get("email") as string
 
@@ -48,10 +49,7 @@ export async function registerForWaitlist(formData: FormData) {
     // Add email to Redis set
     await redis.sadd("waitlist:emails", email)
 
-    // Increment waitlist count
-    await redis.incr("waitlist:count")
-
-    // Get updated count
+    // Get updated count after adding the email
     const count = await getWaitlistCount()
 
     // Check if Resend API key is available before sending email
@@ -69,7 +67,7 @@ export async function registerForWaitlist(formData: FormData) {
     // Send confirmation email
     try {
       const emailResponse = await resend.emails.send({
-        from: "Onchain Watch <onboarding@resend.dev",
+        from: "Onchain Watch <noreply@onchainwatch.com>",
         to: email,
         subject: "Welcome to the Onchain Watch Waitlist!",
         html: EmailTemplate({ email }),
@@ -82,7 +80,6 @@ export async function registerForWaitlist(formData: FormData) {
         message: "Thank you for joining our waitlist! We'll notify you when we launch.",
         emailSent: true,
         emailDetails: {
-          // The Resend API returns a data object with an id
           id: emailResponse.data?.id || "Confirmation sent",
           to: email,
           status: "Delivered",

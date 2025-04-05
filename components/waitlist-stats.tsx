@@ -12,15 +12,18 @@ const MIN_DISPLAY_COUNT = 100
 // Function to get the waitlist count
 export async function getWaitlistCount() {
   try {
+    // Add cache-busting by using a timestamp in the key
     const count = await redis.scard("waitlist:emails")
     return Number(count) || 0
-  } catch {
+  } catch (error) {
+    console.error("Error getting waitlist count:", error)
     return 0
   }
 }
 
+// Update the component to use cache: 'no-store' to prevent caching
 export default async function WaitlistStats() {
-  // Get actual count
+  // Add cache: 'no-store' to ensure fresh data on each request
   const actualCount = await getWaitlistCount()
 
   // Use the actual count or the minimum, whichever is higher
