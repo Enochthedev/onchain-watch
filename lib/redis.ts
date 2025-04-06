@@ -1,6 +1,5 @@
 import { Redis } from "@upstash/redis"
 
-// Create a singleton Redis instance to be reused across the application
 let redisInstance: Redis | null = null
 
 export function getRedisInstance() {
@@ -9,53 +8,52 @@ export function getRedisInstance() {
       url: process.env.UPSTASH_REDIS_REST_URL || "",
       token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
     })
+    console.log("Redis instance created")
   }
   return redisInstance
 }
 
-// Static count that's updated only when needed
-// This completely eliminates the need for frequent Redis calls
-let STATIC_WAITLIST_COUNT = 100
+let STATIC_WAITLIST_COUNT = 0
 
-// Function to get the waitlist count without making a Redis call
 export function getStaticWaitlistCount() {
-  return STATIC_WAITLIST_COUNT
+  console.log("Getting static waitlist count:", STATIC_WAITLIST_COUNT)
+  return STATIC_WAITLIST_COUNT < 100 ? STATIC_WAITLIST_COUNT + 100 : STATIC_WAITLIST_COUNT
 }
 
-// This function should only be called during registration or server startup
 export async function updateWaitlistCount() {
   try {
     const redis = getRedisInstance()
     const count = await redis.scard("waitlist:emails")
     const actualCount = Number(count) || 0
 
-    // Update the static count
-    STATIC_WAITLIST_COUNT = Math.max(actualCount, 100)
+    STATIC_WAITLIST_COUNT = actualCount
+    console.log("Updated waitlist count:", STATIC_WAITLIST_COUNT)
 
-    return STATIC_WAITLIST_COUNT
+    return getStaticWaitlistCount()
   } catch (error) {
     console.error("Error updating waitlist count:", error)
-    return STATIC_WAITLIST_COUNT
+    return getStaticWaitlistCount()
   }
 }
 
-// Initialize the count at startup (this will run once when the server starts)
-updateWaitlistCount().catch(console.error)
+// Call the update function immediately during module loading
+(async () => {
+  console.log("Initializing waitlist count...")
+  await updateWaitlistCount()
+})().catch(console.error)
 
 export async function addEmailToWaitlist(email: string) {
   try {
     const redis = getRedisInstance()
 
-    // Check if email already exists - this is the only Redis call during registration
+    // Check if email already exists
     const exists = await redis.sismember("waitlist:emails", email)
     if (exists) {
       return { success: true, alreadyExists: true }
     }
 
-    // Add email to set
+    // Add email and update count
     await redis.sadd("waitlist:emails", email)
-
-    // Update the static count after adding a new email
     await updateWaitlistCount()
 
     return { success: true, alreadyExists: false }
@@ -64,4 +62,3 @@ export async function addEmailToWaitlist(email: string) {
     return { success: false, error }
   }
 }
-

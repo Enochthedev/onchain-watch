@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import { generateSEO } from "@/lib/seo";
 import "./globals.css"
 import { Providers } from "./providers"
 
@@ -22,11 +23,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
+      <head dangerouslySetInnerHTML={{ __html: generateSEO({}) }}/>
       <body className={`${inter.className} bg-black`}>
         <Providers>
           <div id="root-layout">{children}</div>
         </Providers>
       </body>
+    
     </html>
   )
 }

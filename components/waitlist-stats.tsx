@@ -1,11 +1,31 @@
-import { getStaticWaitlistCount } from "@/lib/redis"
+import { useEffect, useState } from "react"
 
 export default function WaitlistStats() {
-  // Use the static count that doesn't require a Redis call
-  const count = getStaticWaitlistCount()
+  const [count, setCount] = useState<number>(100)
 
-  // Format the count with commas
-  const formattedCount = new Intl.NumberFormat().format(count)
+  useEffect(() => {
+    async function fetchWaitlistCount() {
+      try {
+        const response = await fetch("/api/waitlistCount")
+        const data = await response.json()
+        console.log("Fetched waitlist count:", data.count)
+        
+        // If the count is less than 100, display "100+"
+        if (data.count < 100) {
+          setCount(100) // This ensures it shows "100+"
+        } else {
+          setCount(data.count)
+        }
+      } catch (error) {
+        console.error("Error fetching waitlist count:", error)
+      }
+    }
+
+    fetchWaitlistCount()
+  }, [])
+
+  // Format the count for display
+  const formattedCount = count < 100 ? "100+" : new Intl.NumberFormat().format(count)
 
   return (
     <div className="text-center mt-2 mb-6">
@@ -17,4 +37,3 @@ export default function WaitlistStats() {
     </div>
   )
 }
-

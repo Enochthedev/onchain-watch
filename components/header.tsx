@@ -14,7 +14,7 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <Image src="/logo-dark.svg" alt="Onchain Watch Logo" width={180} height={40} className="h-8 w-auto" />
+              <Image src="/logo-dark.png" alt="Onchain Watch Logo" width={180} height={40} className="h-32 w-auto object-contain" />
             </Link>
           </div>
 
