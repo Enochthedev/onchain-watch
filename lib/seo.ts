@@ -2,8 +2,8 @@ export function generateSEO({
     title = "Onchain Watch - Real-Time Blockchain Monitoring",
     description = "Join the waitlist for Onchain Watch, your go-to tool for real-time blockchain monitoring, detecting scams, and ensuring crypto safety.",
     keywords = "Onchain Watch, blockchain monitoring, crypto security, scam detection, Ethereum, Solana, Polkadot, Bitcoin",
-    url = "https://onchainwatch.xyz",
-    image = "/images/onchain_watch_OT.png",
+    url = "https://onchainwatch.vercel.app",
+    image = "https://onchainwatch.vercel.app/images/onchain_watch_OT.png", 
   }) {
     return `
       <title>${title}</title>
